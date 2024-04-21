@@ -1,0 +1,40 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/weather/weather",
+			"style": {
+				"navigationBarTitleText": "天气预报"
+			}
+		}, {
+			"path": "pages/typhoon/typhoon",
+			"style": {
+				"navigationBarTitleText": "台风预报"
+			}
+		}
+	],
+	"tabBar": {
+	  "color": "#000000",
+	  "selectedColor": "#000000",
+	  "borderStyle": "white",
+	  "backgroundColor": "#ffffff",
+	  "list": [{
+	      "pagePath": "pages/weather/weather",
+	      "iconPath": "static/images/tabbar/home.png",
+	      "selectedIconPath": "static/images/tabbar/home_.png",
+	      "text": "天气预报"
+	    }, {
+	      "pagePath": "pages/typhoon/typhoon",
+	      "iconPath": "static/images/tabbar/work.png",
+	      "selectedIconPath": "static/images/tabbar/work_.png",
+	      "text": "台风预报"
+	    }
+	  ]
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}
