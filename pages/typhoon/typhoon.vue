@@ -11,6 +11,9 @@
 				
 			}
 		},
+		created() {
+			console.log('22')
+		},
 		methods: {
 			
 		}
