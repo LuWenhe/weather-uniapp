@@ -10,6 +10,12 @@
 			"style": {
 				"navigationBarTitleText": "台风预报"
 			}
+		}, {
+			"path" : "pages/search/search",
+			"style" : 
+			{
+				"navigationBarTitleText": "地址搜索"
+			}
 		}
 	],
 	"tabBar": {

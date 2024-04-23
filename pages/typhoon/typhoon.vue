@@ -33,7 +33,7 @@
 
 <template>
 	<view>
-		<web-view :src="url" ></web-view>
+		<web-view :src="url"></web-view>
 	</view>
 </template>
 
@@ -46,7 +46,7 @@
 			}
 		},
 		methods: {
-			
+
 		},
 	}
 </script>

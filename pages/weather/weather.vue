@@ -1,7 +1,10 @@
 <template>
 	<view class="container">
 		<view class="head">
-			<view class="address centered-text">南京市</view>
+			<view class="address centered-text" @click="selectAddress">
+				<img src="../../static/images/location.svg"></img>
+				<view>{{currentAddressName}}</view>
+			</view>
 			<view class="info">
 				<view class="tempture centered-text">{{nowWeatherData.temp}}°</view>
 				<view class="middle centered-text">
@@ -65,6 +68,30 @@
 				</scroll-view>
 			</view>
 		</view>
+		<view class="living-index">
+			<view class="title">生活指数</view>
+			<swiper circular indicator-dots="true" :style="{'height': swiperHeight + 'px'}" :current="currentIndex"
+				@change="changeSwiper">
+				<swiper-item>
+					<view class="content">
+						<view class="item" v-for="(item, index) in livingIndexFirstSwipter">
+							<img :src="item.livingIndexIconUrl"></img>
+							<view>{{item.category}}</view>
+							<view class="name">{{item.name}}</view>
+						</view>
+					</view>
+				</swiper-item>
+				<swiper-item>
+					<view class="content">
+						<view class="item" v-for="(item, index) in livingIndexSecondSwipter">
+							<img :src="item.livingIndexIconUrl"></img>
+							<view>{{item.category}}</view>
+							<view>{{item.name}}</view>
+						</view>
+					</view>
+				</swiper-item>
+			</swiper>
+		</view>
 	</view>
 </template>
 
@@ -79,6 +106,9 @@
 	import {
 		nowAirQuality
 	} from '@/network/api/air'
+	import {
+		livingIndex
+	} from '@/network/api/living'
 
 	export default {
 		name: "weather",
@@ -89,18 +119,41 @@
 				todayWeatherData: {},
 				tomorrowWeatherData: {},
 				hourlyData: [],
-				sevenWeatherData: []
+				sevenWeatherData: [],
+				livingIndexFirstSwipter: [],
+				livingIndexSecondSwipter: [],
+				currentIndex: 0,
+				swiperHeight: 200,
+				currentAddressId: '101010100',
+				currentAddressName: '北京'
 			}
 		},
-		created() {
-			let location = '101010100'
+		onLoad(args) {		
+			//动态设置swiper的高度
+			this.$nextTick(() => {
+				this.setSwiperHeight()
+			})
+			
+			if (Object.keys(args).length != 0) {
+				this.currentAddressId = args.addressId
+				this.currentAddressName = args.cityName
+			}
+			
+			let location = this.currentAddressId
+			
 			this.getNowData(location)
 			this.getDailyForecastDataForThreeDays(location)
 			this.getDailyForecastForSevenDays(location)
 			this.getNowAirQuality(location)
 			this.getHourlyForecastDataForTwentyFourHours(location)
+			this.getLivingIndexData(location)
 		},
 		methods: {
+			selectAddress() {
+				uni.navigateTo({
+					url: '/pages/search/search'
+				})
+			},
 			getHourlyForecastDataForTwentyFourHours(location) {
 				hourlyForecastForTwentyFourHours(location).then(res => {
 					if (res.code === '200') {
@@ -110,7 +163,7 @@
 							let timeStr = item.fxTime
 							let index = timeStr.indexOf('T')
 							item.hour = timeStr.substring(index + 1, index + 6)
-							item.hourlyWeatherIconUrl = '../../static/images/icons/' + item.icon + '.svg'
+							item.hourlyWeatherIconUrl = '../../static/images/weather/' + item.icon + '.svg'
 						})
 
 						this.hourlyData = hourlyArray
@@ -121,11 +174,11 @@
 				dailyForecastForThreeDays(location).then(res => {
 					if (res.code === '200') {
 						let todayData = res.daily[0]
-						todayData.todayWeatherIconUrl = '../../static/images/icons/' + todayData.iconDay + '.svg'
+						todayData.todayWeatherIconUrl = '../../static/images/weather/' + todayData.iconDay + '.svg'
 						this.todayWeatherData = todayData
 
 						let tomorrowData = res.daily[1]
-						tomorrowData.tomorrowWeatherIconUrl = '../../static/images/icons/' + tomorrowData.iconDay + '.svg'
+						tomorrowData.tomorrowWeatherIconUrl = '../../static/images/weather/' + tomorrowData.iconDay + '.svg'
 						this.tomorrowWeatherData = tomorrowData
 					}
 				})
@@ -134,17 +187,16 @@
 				dailyForecastForSevenDays(location).then(res => {
 					if (res.code === '200') {
 						let sevenDaysArray = res.daily
-						
+
 						sevenDaysArray.forEach(item => {
 							let timeStr = item.fxDate
 							let index = timeStr.indexOf('-')
 							item.date = timeStr.substring(index + 1)
-							item.dayWeatherDayIconUrl = '../../static/images/icons/' + item.iconDay + '.svg'
-							item.dayWeatherNightIconUrl = '../../static/images/icons/' + item.iconNight + '.svg'
+							item.dayWeatherDayIconUrl = '../../static/images/weather/' + item.iconDay + '.svg'
+							item.dayWeatherNightIconUrl = '../../static/images/weather/' + item.iconNight + '.svg'
 						})
-						
+
 						this.sevenWeatherData = sevenDaysArray
-						console.log(this.sevenWeatherData)
 					}
 				})
 			},
@@ -159,6 +211,48 @@
 				nowAirQuality(location).then(res => {
 					if (res.code === '200') {
 						this.nowAirQualityData = res.aqi[1]
+					}
+				})
+			},
+			getLivingIndexData(location) {
+				livingIndex(location).then(res => {
+					if (res.code === '200') {
+						let dailyArray = res.daily
+						let firstSwipter = [],
+							secondSwipter = []
+
+						dailyArray.forEach(item => {
+							if (item.type <= 8) {
+								firstSwipter.push(item)
+							} else {
+								secondSwipter.push(item)
+							}
+
+							item.livingIndexIconUrl = '../../static/images/living/' + item.type + '.svg'
+							item.name = item.name.slice(0, -2)
+						})
+
+						this.livingIndexFirstSwipter = firstSwipter
+						this.livingIndexSecondSwipter = secondSwipter
+					}
+				})
+			},
+			//手动切换题目
+			changeSwiper(e) {
+				this.currentIndex = e.detail.current
+				//动态设置swiper的高度，使用nextTick延时设置
+				this.$nextTick(() => {
+					this.setSwiperHeight()
+				})
+			},
+			//动态设置swiper的高度
+			setSwiperHeight() {
+				let element = "#content-wrap" + this.currentIndex
+				let query = uni.createSelectorQuery().in(this)
+				query.select(element).boundingClientRect()
+				query.exec((res) => {
+					if (res && res[0]) {
+						this.swiperHeight = res[0].height
 					}
 				})
 			}
@@ -203,6 +297,11 @@
 		height: 60rpx;
 	}
 
+	.head .address img {
+		height: 14px;
+		margin-right: 10rpx;
+	}
+
 	.head .tempture {
 		font-size: 120px;
 		font-weight: 100;
@@ -239,12 +338,12 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		height: 150rpx;
+		height: 160rpx;
 		background-color: #fff;
 	}
 
 	.today-and-tomorrow img {
-		height: 20px;
+		height: 28px;
 	}
 
 	.today-and-tomorrow .today,
@@ -255,7 +354,7 @@
 	}
 
 	.today-and-tomorrow .top {
-		margin-bottom: 15rpx;
+		margin-bottom: 12rpx;
 	}
 
 	.today-and-tomorrow .top,
@@ -281,18 +380,33 @@
 	.forecast-content {
 		padding: 20rpx 0rpx;
 	}
-	
+
 	.forecast-content img {
-		height: 20px;
+		height: 26px;
 	}
 
 	.forecast-content .common-content {
 		background-color: #fff;
 		border-radius: .16rem;
-		margin-bottom: 20rpx;
 	}
 
 	.forecast-content .common-content .title {
+		padding: 18rpx;
+		font-size: 18px;
+		font-weight: 600;
+	}
+
+	.forecast-content .twenty-four-hours {
+		margin-bottom: 20rpx;
+	}
+
+	.living-index {
+		background-color: #fff;
+		border-radius: .16rem;
+		margin-bottom: 11px;
+	}
+
+	.living-index .title {
 		padding: 18rpx;
 		font-size: 18px;
 		font-weight: 600;
@@ -304,7 +418,7 @@
 		width: 126rpx;
 		font-size: 15px;
 	}
-	
+
 	.forecast-content .day {
 		display: inline-block;
 		text-align: center;
@@ -324,12 +438,43 @@
 		margin-bottom: 18rpx;
 	}
 
-	.forecast-content .twenty-four-hours, .fifteen-days .content {
+	.forecast-content .twenty-four-hours,
+	.fifteen-days .content {
 		white-space: nowrap;
 	}
 
 	.forecast-content .fifteen-days .date,
 	.tempture {
 		font-size: 14px;
+	}
+
+	.living-index .content {
+		display: flex;
+		flex-wrap: wrap;
+		/* 允许子元素换行 */
+		justify-content: space-between;
+		/* 子元素在父容器中平均分布 */
+		width: 100%;
+		/* 适当设置宽度 */
+		height: auto;
+		/* 或者适当设置高度 */
+		text-align: center;
+		font-size: 14px;
+	}
+
+	.living-index .content .name {
+		color: #999;
+	}
+
+	.living-index .content .item {
+		flex-basis: calc(25% - 20px);
+		/* 计算每个子元素的基础宽度，减去间距 */
+		margin: 15rpx;
+		/* 适当设置间距 */
+	}
+
+	.living-index img {
+		height: 26px;
+		margin-bottom: 10rpx;
 	}
 </style>
